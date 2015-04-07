@@ -8,7 +8,7 @@ box1$setBorderWidth(30)
 frame$add(box1)   #add box1 to the frame
 box2 <- gtkHBoxNew(spacing= 10) #distance between elements
 box2$setBorderWidth(24)
-TextBox<- gtkEntryNew() #text field with expresion to calculate
+#TextBox<- gtkEntryNew() #text field with expresion to calculate
 TextBox<- gtkTextView() #text field with expresion to calculate
 buffer<-gtkTextBuffer()
 TextBox$buffer<-buffer
