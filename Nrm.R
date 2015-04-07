@@ -13,6 +13,17 @@ Nrm <-function(name,ak,ck){
     }
     num
   }
+  # information need checked
+  info<-function(thetas){
+    ex<-0
+    ex2<-0
+    p<-pdf(thetas)
+    for (i in 1:m) {
+      ex<-ex+ak[i]*p[,i+1]
+      ex2<-ex2+ak[i]*ak[i]*p[,i+1]
+    }
+    ex2-ex*ex
+  }
   m<-length(ck)
   ncat<-m+1
   ak<-c(0,ak)
@@ -26,7 +37,7 @@ Nrm <-function(name,ak,ck){
     }
   }
   ck<-c(0,ck)
-  res<-list(name=name,nfac=1,itemtype=3,ncat=ncat,gpc=0,a=a,as=as,ak=ak,ck=ck,bk=bk,pdf=pdf)
+  res<-list(name=name,nfac=1,itemtype=3,ncat=ncat,gpc=0,a=a,as=as,ak=ak,ck=ck,bk=bk,pdf=pdf,info=info)
   class(res)<-"uirt"
   res
 }
