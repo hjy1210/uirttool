@@ -14,7 +14,7 @@ Nrm <-function(name,ak,ck){
     num
   }
   # information need checked
-  info<-function(thetas){
+  infoWrong<-function(thetas){
     ex<-0
     ex2<-0
     p<-pdf(thetas)
@@ -23,6 +23,23 @@ Nrm <-function(name,ak,ck){
       ex2<-ex2+ak[i]*ak[i]*p[,i+1]
     }
     ex2-ex*ex
+  }
+  # Baker, Item Response Theory: parameter estimation techniques 2004
+  # page 236/254, table 9.1/9.2
+  # use following three commented statements to test
+  # item<-Nrm("V1",ak=c(-0.6,1.2),ck=c(1,1.25))
+  # thetas<-seq(-3,3,by=0.5)
+  # item$info(thetas)
+
+  infoj<-function(theta){
+    p<-c(pdf(theta))
+    w<-diag(p)-outer(p,p)
+    c(ak %*% w %*%ak)
+  }
+  info<-function(thetas){
+    sapply(thetas,function(x){
+      infoj(x)
+    })
   }
   m<-length(ck)
   ncat<-m+1
