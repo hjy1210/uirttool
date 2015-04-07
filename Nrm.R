@@ -13,14 +13,17 @@ Nrm <-function(name,ak,ck){
     }
     num
   }
-  # information need checked
-  infoWrong<-function(thetas){
+  # information function info2 is also correct, reson as follows:
+  # log(P[x=k])=a_k\theta+c_k-log(1+\sum_{i=1}^K exp(a_i\theta+c_i))
+  # -\frac{\partial^2 log(P[x=k])}{\partial \theta^2}=\sum_{i=1}^K a_i^2 P[X=i]-(\sum_{i=1}^K a_i P[X=i])^2, independent of k
+  # E[-\frac{\partial^2 log(P[x=k])}{\partial \theta^2}]=\sum_{i=1}^K a_i^2 P[X=i]-(\sum_{i=1}^K a_i P[X=i])^2
+  info2<-function(thetas){
     ex<-0
     ex2<-0
     p<-pdf(thetas)
     for (i in 1:m) {
-      ex<-ex+ak[i]*p[,i+1]
-      ex2<-ex2+ak[i]*ak[i]*p[,i+1]
+      ex<-ex+ak[i+1]*p[,i+1]
+      ex2<-ex2+ak[i+1]*ak[i+1]*p[,i+1]
     }
     ex2-ex*ex
   }
@@ -54,7 +57,7 @@ Nrm <-function(name,ak,ck){
     }
   }
   ck<-c(0,ck)
-  res<-list(name=name,nfac=1,itemtype=3,ncat=ncat,gpc=0,a=a,as=as,ak=ak,ck=ck,bk=bk,pdf=pdf,info=info)
+  res<-list(name=name,nfac=1,itemtype=3,ncat=ncat,gpc=0,a=a,as=as,ak=ak,ck=ck,bk=bk,pdf=pdf,info=info,info2=info2)
   class(res)<-"uirt"
   res
 }
