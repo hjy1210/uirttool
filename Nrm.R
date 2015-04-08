@@ -54,7 +54,8 @@ Nrm <-function(name,ak,ck){
     }
   }
   ck<-c(0,ck)
-  res<-list(name=name,nfac=1,itemtype=3,ncat=ncat,gpc=0,a=a,as=as,ak=ak,ck=ck,bk=bk,pdf=pdf,info=info)
+  res<-list(name=name,nfac=1,itemtype="nrm",ncat=ncat,gpc=0,a=a,as=as,ak=ak,
+  ck=ck,bk=bk,pdf=pdf,info=info)
   class(res)<-"uirt"
   res
 }

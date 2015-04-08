@@ -18,9 +18,9 @@ PL<-function (name, a, bk, g){
       p<-pdf(thetas)
       a*a*p[,1]/p[,2]*((p[,2]-g)/(1-g))^2
     }
-	ck <- -bk[1] * a
+    ck <- -bk[1] * a
 	ncat <- 2
-	res <- list(name = name, nfac = 1, itemtype = 1, ncat = ncat, 
+	res <- list(name = name, nfac = 1, itemtype = "pl", ncat = ncat, 
 		a = a, ck = ck, bk = bk, g = g, pdf = pdf,info=info)
 	class(res) <- "uirt"
 	res
