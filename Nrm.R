@@ -57,12 +57,8 @@ Nrm <-function(name,ak,ck){
     }
   }
   ck<-c(0,ck)
-<<<<<<< HEAD
   res<-list(name=name,nfac=1,itemtype="nrm",ncat=ncat,gpc=0,a=a,as=as,ak=ak,
-  ck=ck,bk=bk,pdf=pdf,info=info)
-=======
-  res<-list(name=name,nfac=1,itemtype=3,ncat=ncat,gpc=0,a=a,as=as,ak=ak,ck=ck,bk=bk,pdf=pdf,info=info,info2=info2)
->>>>>>> origin/master
+  ck=ck,bk=bk,pdf=pdf,info=info,info2=info2)
   class(res)<-"uirt"
   res
 }

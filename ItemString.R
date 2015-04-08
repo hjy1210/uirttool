@@ -1,4 +1,4 @@
-itemString<-function(item){
+ItemString<-function(item){
   vecstr<-function(v){
     if (length(v)==1)
       as.character(v)
