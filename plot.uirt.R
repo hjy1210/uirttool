@@ -3,7 +3,7 @@ plot.uirt<-function(item,thetas,type="CRF") {
   p<-item$pdf(thetas)
   
   plot(thetas,p[,ncat],type="n",xlim=range(thetas),ylim=c(0,1),
-    xlab="theta",ylab="probability",main=paste(ItemString(item),"CRF"))
+    xlab="theta",ylab="probability",main=paste("CRF",ItemString(item),sep="\r\n"))
   for (i in 1:ncat) {
     lines(thetas,p[,i],lty=20-i)
     index<-(1:length(thetas))[p[,i]==max(p[,i])][1]

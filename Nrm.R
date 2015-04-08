@@ -1,4 +1,4 @@
-Nrm <-function(name,ak,ck){
+Nrm <-function(name,ak,ck,itemtype="nrm"){
   # length(ak)=length(ck)=ncat-1
   pdf<-function(thetas){
     den<-1
@@ -57,7 +57,7 @@ Nrm <-function(name,ak,ck){
     }
   }
   ck<-c(0,ck)
-  res<-list(name=name,nfac=1,itemtype="nrm",ncat=ncat,gpc=0,a=a,as=as,ak=ak,
+  res<-list(name=name,nfac=1,itemtype=itemtype,ncat=ncat,gpc=0,a=a,as=as,ak=ak,
   ck=ck,bk=bk,pdf=pdf,info=info,info2=info2)
   class(res)<-"uirt"
   res
