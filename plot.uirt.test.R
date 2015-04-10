@@ -52,7 +52,7 @@ gSignalConnect ( combo , "changed" ,
 #  })
 plot_type <- gtkLabel ( "  plot type:" )
 comboType<-gtkComboBoxNewText()
-sapply(c("crf","trf","inf","icf"),comboType$appendText)
+sapply(c("crf","bcf","inf","icf"),comboType$appendText)
 gSignalConnect ( comboType , "changed" ,
   f = function ( button , ... ) {
     if ( combo$getActive() < 0 || comboType$getActive()<0)
@@ -75,3 +75,20 @@ vbox$packStart(da)
 win$add(vbox)
 win$setDefaultSize(400,400)
 win$showAll() 
+
+# Baker, Item Response Theory: parameter estimation techniques 2004
+# page 75, table 3.2
+# use following three commented statements to test
+item<-PL("V1",a=0.8,b=0,c=0.2)
+thetas<-seq(-3,3,by=0.5)
+round(item$info(thetas),4)-c(0.0122,0.0217,0.0359,0.0547,0.0758,
+ 0.0947,0.1067,0.1085,0.1005,0.0859,0.0688,0.0523,0.0383)
+
+# Baker, Item Response Theory: parameter estimation techniques 2004
+# page 236/254, table 9.1/9.2
+# use following three commented statements to test
+item<-Nrm("V1",ak=c(-0.6,1.2),ck=c(1,1.25))
+thetas<-seq(-3,3,by=0.5)
+round(item$info(thetas),4)-c(0.0362,0.0644,0.1212,0.2305,0.4111,
+  0.6193,0.7071,0.5847,0.3694,0.1974,0.0972,0.0465,0.0222)
+

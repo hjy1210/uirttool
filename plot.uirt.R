@@ -21,10 +21,10 @@ plot.uirt<-function(item,thetas,type="crf") {
       text(thetas[index],p[index,i],paste0("P",(i-1)))
     }
   }
-  plotTrf<-function(){
+  plotBcf<-function(){
     revcp<-revcump()
     plot(thetas,revcp[,ncat-1],type="n",xlim=range(thetas),ylim=c(0,1),
-      xlab="theta",ylab="probability",main=paste("TRF",ItemString(item,ndigit=3),sep="\r\n"))
+      xlab="theta",ylab="probability",main=paste("BCF",ItemString(item,ndigit=3),sep="\r\n"))
     for (i in 1:(ncat-1)) {
       lines(thetas,revcp[,i],lty=20-i)
       if (revcp[1,i]>0.5) 
@@ -65,8 +65,8 @@ plot.uirt<-function(item,thetas,type="crf") {
   }
   if(type=="crf")
     plotCrf()
-  else if (type=="trf")
-    plotTrf()
+  else if (type=="bcf")
+    plotBcf()
   else if (type=="inf")
     plotInf()  
   else if (type=="icf")
