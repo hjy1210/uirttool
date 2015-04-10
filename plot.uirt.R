@@ -38,21 +38,29 @@ plot.uirt<-function(item,thetas,type="crf") {
   }
   plotInf<-function(){
     Itheta<-item$info2(thetas)
+    h<-0.001
+    icfder<-(icf(thetas+h)-icf(thetas))/h
     plot(thetas,Itheta,type="l",xlim=range(thetas),
       xlab="theta",ylab="information",main=paste("INF",ItemString(item,ndigit=3),sep="\r\n"))
+    points(thetas,icfder)
+    legend("right",legend=c("circle icf'","line inf"))
   }
-  plotIcf<-function(){
+  icf<-function(thetas){
     p<-item$pdf(thetas)
     m<-item$ncat-1
-    icf<-0
+    itemcf<-0
     for (i in 1:m){
       if (item$itemtype!="pl" && item$itemtype!="plx") 
-        icf<-icf+item$ak[i]*p[,i+1]
+        itemcf<-itemcf+item$ak[i]*p[,i+1]
       else {
-        icf<-icf+item$ak*p[,i+1]
+        itemcf<-itemcf+item$ak*p[,i+1]
       }
     }
-    plot(thetas,icf,type="l",xlim=range(thetas),
+    itemcf
+  }
+  plotIcf<-function(){
+    itemcf<-icf(thetas)
+    plot(thetas,itemcf,type="l",xlim=range(thetas),
       xlab="theta",ylab="expect score",main=paste("icf",ItemString(item,ndigit=3),sep="\r\n"))
   }
   if(type=="crf")

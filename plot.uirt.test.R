@@ -21,6 +21,7 @@ textbox<-gtkEntry()
 textbox['width-request']<-300
 textbox$setText("Nrm(\"nrm\",ak=c(0.4,1),ck=c(1.1,-1.2))")
 gSignalConnect(textbox, "activate", textchanged)
+item_model <- gtkLabel ( "  item model:" )
 combo <- gtkComboBoxNewText()
 sapply( c( "Nrm(\"nrm\",ak=c(0.4,1),ck=c(1.1,-1.2))" , 
   "PL(\"PL\",a=1.2,b=0.8,c=0.1)",
@@ -49,6 +50,7 @@ gSignalConnect ( combo , "changed" ,
 #	  plot(item,thetas=seq(-6,6,len=100),type="trf")
 #	}
 #  })
+plot_type <- gtkLabel ( "  plot type:" )
 comboType<-gtkComboBoxNewText()
 sapply(c("crf","trf","inf","icf"),comboType$appendText)
 gSignalConnect ( comboType , "changed" ,
@@ -64,7 +66,9 @@ gSignalConnect ( comboType , "changed" ,
 vbox <- gtkVBox(FALSE)
 hbox<-gtkHBox(FALSE)
 hbox$packStart(textbox,fill=F,expand=F,padding=5)
+hbox$packStart(item_model,fill=F,expand=F,padding=2)
 hbox$packStart(combo,fill=F,expand=F,padding=5)
+hbox$packStart(plot_type,fill=F,expand=F,padding=2)
 hbox$packStart(comboType,fill=F,expand=F,padding=5)
 vbox$packStart(hbox,fill=F,expand=F,padding=5)
 vbox$packStart(da)
