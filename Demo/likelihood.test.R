@@ -3,7 +3,10 @@ source("PL.R")
 source("likelihood.R")
 require(RGtk2)
 require(cairoDevice)
-
+# In illmle.mod, V1-V10 is copyed from Educational Measurement Vol.4,P137.
+# V11-V15 is copyed from  Item Response Theory: principles and applications
+# R.K. Hambleton & Hariharan Swaminathan 1985, P87-88.
+# V16-17 is copyed from Pshchometrika 1973 Vol38(2) P.223
 # reference guis.pdf p.167-174 about GtkTreeView
 items<-list()
 view<-gtkTreeView()
