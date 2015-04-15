@@ -65,7 +65,7 @@ max(abs(t(p2)-mod$rprobs[2,1:3,]))
 p3<-items[[3]]$pdf(thetas)
 max(abs(t(p3)-mod$rprobs[3,,]))
 # check MLE
-est<-tam.wle(mod,WLE=FALSE)
+est<-tam.mml.wle2(mod,WLE=FALSE)
 mle<-est[,c("PersonScores","theta")]
 mle<-unique(mle)
 mle<-mle[order(mle$PersonScores),]
