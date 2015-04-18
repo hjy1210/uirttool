@@ -70,7 +70,7 @@ mle<-est[,c("PersonScores","theta")]
 mle<-unique(mle)
 mle<-mle[order(mle$PersonScores),]
 rownames(mle)<-NULL
-mle$tcc<-tcc(items,scores,mle$theta)
+mle$tcc<-tcc(items,scores=scores,thetas=mle$theta)
 mle$tccdiff<-mle$tcc-mle$PersonScores
 mle
 max(abs(mle$tccdiff))
@@ -98,7 +98,7 @@ max(abs(eap-mod$person$EAP))
 ## Conquest 之估計
 接著，將data.gpcm轉成Conquest所需的資料檔cqc.dat，製造Conquest所需的指令檔command.cqc。用system呼叫Conquest3Console.exe，進行模型參數之測定。
 ```{r}
-setwd("G:/")
+setwd("g:/")
 # create datafile for conquest
 cqcdat<-paste0(dat[[1]],dat[[2]],dat[[3]])
 writeLines(cqcdat,"cqc.dat")
@@ -129,7 +129,7 @@ system("\"L:\\Acer Conquest3\\conquest3console.exe\" command.cqc;")
 Conquest的EAP，不計極端好與極端壞的考生，有將近0.01的誤差，相對於TAM的0.0001，似乎不能用浮點運算的
 誤差來解釋。附帶的，將TAM與Conquest所得的試題參數、母體參數也加以比較，大致差不多，只有EAP的部分，似乎不盡理想，到底是甚麼問題？
 ```{r}
-setwd("G:/")
+setwd("g:/")
 
 # read conquest parameter estimate
 cqcitems<-readCPcx(scores,prmfile="cqc.prm",designfile="cqc.mat")
@@ -139,7 +139,7 @@ cqcmle<-cqcmle[c(2,4)]
 names(cqcmle)<-c("raw","mle")
 cqcmle<-unique(cqcmle)
 cqcmle<-cqcmle[order(cqcmle$raw),]
-cqcmle$tcc<-tcc(cqcitems,scores,cqcmle$mle)
+cqcmle$tcc<-tcc(cqcitems,scores=scores,thetas=cqcmle$mle)
 cqcmle
 max(abs(cqcmle$tcc-cqcmle$raw))
 # compare parameter estimates of conquest and TAM
