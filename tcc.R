@@ -1,4 +1,4 @@
-tcc<-function(items,thetas,scores=NULL){
+tcc<-function(items,scores=NULL,thetas){
   if (is.null(scores)){
     scores<-lapply(items,function(item){
       c(0,item$ak)
