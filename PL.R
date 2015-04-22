@@ -18,20 +18,11 @@ PL<-function (name, a, b, c,as=NULL){
       p<-pdf(thetas)
       ak*ak*p[,1]/p[,2]*((p[,2]-c)/(1-c))^2
     }
-    if (is.null(as)) {
-      itemtype<-"pl"
-      ak<-a
-    }else{
-      itemtype<-"plx"
-      ak<-a*as
-    }
+    if (is.null(as)) as<-1
+    ak<-a*as
     ck <- -b * ak
 	ncat <- 2
-    if (itemtype=="pl")
-	  res <- list(name = name, nfac = 1, itemtype = itemtype, ncat = ncat, 
-		a = a, ak=ak,ck = ck, bk = b, c = c, pdf = pdf,info2=info)
-	else
-      res <- list(name = name, nfac = 1, itemtype = itemtype, ncat = ncat, 
+    res <- list(name = name, nfac = 1, itemtype = "pl", ncat = ncat, 
 		a = a, ak=ak,ck = ck, bk = b, c = c,as=as, pdf = pdf,info2=info)
 	class(res) <- "uirt"
 	res
