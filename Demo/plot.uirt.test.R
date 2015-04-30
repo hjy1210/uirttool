@@ -29,7 +29,18 @@ sapply( c( "Nrm(\"nrm\",ak=c(0.4,1),ck=c(1.1,-1.2))" ,
   "Gpc(\"gpc\",a=1.2,bk=c(0.8,1.3))",
   "Pcm(\"pcm\",bk=c(0.8,1.3))",  
   "Pcx(\"pcx\",as=c(0.5,1),bk=c(0.8,1.3))",  
-  "Gpx(\"gpx\",a=1.2,as=c(0.5,1),bk=c(0.8,1.3))"  
+  "Gpx(\"gpx\",a=1.2,as=c(0.5,1),bk=c(0.8,1.3))",
+  "PL(name=\"V1\",a=1.2,b=0.3,c=0.1)",
+  "PL(name=\"V2\",a=1.2,b=0.3,c=0.1,as=2)",
+  "Pcm(name=\"V3\",bk=c(1,-1.2))",
+  "Nrm(name=\"V8\",ak=1:2,ck=-cumsum(c(1,-1.2)),a=1)",
+  "Pcx(name=\"V4\",as=c(0.4,1),bk=c(1,-1.2))",
+  "Nrm(name=\"V9\",ak=c(0.4,1),ck=c(-0.4*1,-0.4*1-(1-0.4)*(-1.2)),a=1,as=c(0.4,1))",
+  "Gpc(name=\"V5\",a=1.2,bk=c(1,-1.2))",
+  "Nrm(name=\"V10\",ak=c(1,2),ck=c(-1.2*1,-1.2*1-1.2*(-1.2)),a=1.2)",
+  "Gpx(name=\"V6\",a=1.2,as=c(0.4,1),bk=c(1,-1.2))",
+  "Nrm(name=\"V11\",ak=1.2*c(0.4,1),ck=c(-1.2*0.4*1,-1.2*0.4*1-1.2*(1-0.4)*(-1.2)),a=1.2,as=c(0.4,1))",
+  "Nrm(name=\"V7\",ak=c(1,1.2),ck=c(1,-1.2))"
   ) , combo$appendText)
 gSignalConnect ( combo , "changed" ,
   f = function ( button , ... ) {

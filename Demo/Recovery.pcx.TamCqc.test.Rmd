@@ -1,0 +1,151 @@
+---
+title: "Recovery.pcx.TamCqc.test"
+author: "Hon-Jang Yang"
+date: "Monday, April 14, 2015"
+output: html_document
+---
+
+# 主旨
+了解如何使用TAM與Conquest回復Pcx參數的能力
+
+#模擬資料
+```{r}
+options(echo=F)
+rm(list=ls())
+setwd("L:/github/uirttool")
+source("Pcx.R")
+source("Nrm.R")
+source("readTPcx.R")
+source("readCPcx.R")
+source("likelihood.R")
+source("tcc.R")
+source("PcxDesign.R")
+source("ck2bk.R")
+source("getBks.R")
+source("rItems.R")
+source("createCCmds.R")
+
+setwd("g:\\")
+library(TAM)
+set.seed(150430)
+bvalues<-rbeta(46,1.1,1.4)*4-2
+items<-lapply(1:40,function(i){
+  if (i<=4) Pcx(name=paste0("V",i),bk=bvalues[i],as=1)
+  else if (i<=10) Pcx(name=paste0("V",i),bk=bvalues[(5+(i-5)*2):(6+(i-5)*2)],as=c(0.4,1))
+  else Pcx(name=paste0("V",i),bk=bvalues[17+(i-11)],as=1)
+})
+I<-3000
+thetas<-rnorm(I,0.5,1.2)
+resp<-rItems(items,thetas)
+scores<-lapply(1:40,function(i){
+  if(i<=4 || i>=11) c(0,1)
+  else c(0,0.4,1)
+})
+M<-3
+AB2<-PcxDesign(scores,resp=resp)
+mod<-tam.mml(resp=resp,irtmodel="1PL",B=AB2$B,est.variance=TRUE,control=list(progress=FALSE))
+
+```
+## TAM 之估計
+接著，用`readTItems(mod) 與 Nm`解讀tam.mml所測定出來的參數mod\$xsi,mod\$A,mod\$B，產生各題據以計算
+category responce function的元件，據以驗證mod\$rprobs，再用tcc函數計算Test Characteristic Curve，據以驗證MLE。用likelihood產生 likelihood function以便計算posterion distribution來驗證EAP。諸項驗證，大致都在
+浮點運算產生誤差的允許範圍內。
+
+```{r}
+# 驗證tam.mml的復原能力，population size 3000時並不時分理想，仍須些許的Shift。
+estitems<-readTPcx(mod)
+par(mfrow=c(2,1))
+plot(bvalues,getBks(estitems))
+c(mean(bvalues),mean(getBks(estitems)))
+abline(a=mean(getBks(estitems)-mean(bvalues)),b=1)
+plot(bvalues,getBks(estitems)-bvalues)
+abline(a=mean(getBks(estitems)-mean(bvalues)),b=0)
+
+
+thetas<-mod$theta
+# check response category probability
+for (i in 1:40){
+  p<-estitems[[i]]$pdf(thetas)
+  print(max(abs(t(p)-mod$rprobs[i,1:estitems[[i]]$ncat,])))
+}
+# check MLE
+est<-tam.mml.wle2(mod,WLE=FALSE)
+mle<-est[,c("PersonScores","theta")]
+mle<-unique(mle)
+mle<-mle[order(mle$PersonScores),]
+rownames(mle)<-NULL
+mle$tcc<-tcc(estitems,scores=scores,thetas=mle$theta)
+mle$tccdiff<-mle$tcc-mle$PersonScores
+mle
+max(abs(mle$tccdiff))
+# check likelihood function
+like<-t(apply(resp,1,likelihood,items=estitems,thetas=thetas))
+like2<-mod$like     #IRT.likelihood(mod)
+max(abs(like-like2))
+# check posterior
+sd<-sqrt(mod$variance)
+mu<-mod$beta
+prior<-dnorm(thetas,mu,sd)
+prior<-prior/(sum(prior))
+post<-t(apply(like,1,function(x){
+  x*prior/sum(x*prior)
+  }))
+posterior<-mod$post    #IRT.posterior(mod)
+max(abs(post-posterior))
+# check EAP
+eap<-apply(post,1,function(x){
+ sum(x*thetas)
+ })
+max(abs(eap-mod$person$EAP))
+```
+
+## Conquest 之估計
+接著，將resp轉成Conquest所需的資料檔cqc.dat，製造Conquest所需的指令檔command.cqc。用system呼叫Conquest3Console.exe，進行模型參數之測定。
+```{r}
+setwd("g:/")
+# create datafile for conquest
+cqcdat<-""
+for (i in 1:40) cqcdat<-paste0(cqcdat,resp[,i])
+writeLines(cqcdat,"cqc.dat")
+# create conquest command file
+cmds<-createCCmds(datafile="cqc.dat",responses="1-40",constraints="cases",exportprmfile="cqc.prm",
+                  exportdesignmatrixfile="cqc.des",Model="item+item*step",showmlefile="cqc.mle",
+                  exportregfile="cqc.beta",exportcovfile="cqc.cov",
+                  Scores=c("score (0 1) (0 1) !items(1-4);",
+                           "score (0 1) (0 1) !items(11-40);",
+                           "score (0 1 2) (0 0.4 1) ! items(5-10);"),quit=TRUE)
+writeLines(cmds,"commands.cqc")
+system("\"L:\\Acer Conquest3\\conquest3console.exe\" commands.cqc;")
+
+```
+產生試題參數檔cqc.prm，MLE估計檔cqc.mle。用同樣的方法一一加以驗證。驗證結果，MLE相符。
+
+```{r}
+setwd("g:/")
+
+# read conquest parameter estimate
+cqcitems<-readCPcx(scores,prmfile="cqc.prm",designfile="cqc.des")
+# check conquest MLE
+cqcmle<-read.table("cqc.mle")
+cqcmle<-cqcmle[c(2,4)]
+names(cqcmle)<-c("raw","mle")
+cqcmle<-unique(cqcmle)
+cqcmle<-cqcmle[order(cqcmle$raw),]
+cqcmle$tcc<-tcc(cqcitems,scores=scores,thetas=cqcmle$mle)
+cqcmle
+max(abs(cqcmle$tcc-cqcmle$raw))
+# compare parameter estimates of conquest and TAM
+prm<-getBks(cqcitems)
+cbind(prm,getBks(estitems),prm-getBks(estitems))
+
+# compare population mean
+regr<-read.table("cqc.beta")
+c(regr[[3]],mod$beta)
+
+# compare population variance
+var<-read.table("cqc.cov")
+c(var[[3]],mod$variance)
+
+```
+ 
+ 
