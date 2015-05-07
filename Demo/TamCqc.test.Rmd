@@ -20,20 +20,12 @@ $$C \exp(\sum_{i=1}^k d_i(\theta-b_i)), k=0,1,2,\cdots,K$$
 利用TAM裡的資料data.gpcm當作答題反應資料。data.gpcm有3個item，每個item都有 4 個類別。為了增加變化，
 以 `data.gpcm[[2]][data.gpcm[[2]]==3]<-2`，將第 2 個 item 的反應 2 與 3 合併為 2，因此第 2 個 item 的類別數由原來的 4 變成 3。為了測試 scoring matrix 的用法，將第 1 題各類別的配分設為 `c(0,0.9,2.1,3)`、第 2 題各類別的配分設為 `c(0,1.1,2)`、第 3 題各類別的配分設為 `c(0,1,1.8,3)`。此時，相對應的 $d_{11}=0.9, d_{12}=1.2, d_{13}=0.9$，$d_{21}=1.1, d_{22}=0.9$，$d_{31}=1, d_{32}=0.8, d_{33}=1.2$，其中 $d_{ik}$ 為第 $i$ 題類別$k$ 的 $d$ 參數。
 
-針對PCX模型，我寫了 `PcxDesign(listScores)` 來產生 TAM 所需的 designmatrix。對修改後的 data.gpcm，用指令 `AB2<-PcxDesign(list(c(0,0.9,2.1,3),c(0,1.1,2),c(0,1,1.8,3)))` 之後，`AB2$B是 `tam.mml` 所需的 `B`，對應的參數順序為 $b11,b12,b13,b21,b22,b31,b32,b33$，其中 $b_{ik}$ 為第 $i$ 題第 $k$ 類的 $b$ 參數。
+針對PCX模型，我寫了 `PcxDesign` 來產生 TAM 所需的 designmatrix。對修改後的 data.gpcm，用指令 `AB2<-PcxDesign(list(c(0,0.9,2.1,3),c(0,1.1,2),c(0,1,1.8,3)),resp=dat)` 之後，`AB2$B是 `tam.mml` 所需的 `B`，對應的參數順序為 $b11,b12,b13,b21,b22,b31,b32,b33$，其中 $b_{ik}$ 為第 $i$ 題第 $k$ 類的 $b$ 參數。
 ```{r}
 options(echo=F)
 rm(list=ls())
 setwd("L:/github/uirttool")
-source("Pcx.R")
-source("Nrm.R")
-source("readTPcx.R")
-source("readCPcx.R")
-source("likelihood.R")
-source("tcc.R")
-source("PcxDesign.R")
-source("ck2bk.R")
-source("getBks.R")
+source("uirttool.txt")
 
 setwd("g:\\")
 library(TAM)
@@ -46,6 +38,8 @@ M<-max(sapply(data.gpcm,max))
 I<-length(data.gpcm)
 AB2<-PcxDesign(scores,resp=dat)
 mod<-tam.mml(resp=dat,irtmodel="1PL",B=AB2$B,est.variance=TRUE,control=list(progress=FALSE))
+mod$B
+mod$A
 
 ```
 ## TAM 之估計
@@ -76,7 +70,7 @@ mle
 max(abs(mle$tccdiff))
 # check likelihood function
 like<-t(apply(resp,1,likelihood,items=items,thetas=thetas))
-like2<-IRT.likelihood(mod)
+like2<-mod$like
 max(abs(like-like2))
 # check posterior
 sd<-sqrt(mod$variance)
@@ -86,7 +80,7 @@ prior<-prior/(sum(prior))
 post<-t(apply(like,1,function(x){
   x*prior/sum(x*prior)
   }))
-posterior<-IRT.posterior(mod)
+posterior<-mod$post
 max(abs(post-posterior))
 # check EAP
 eap<-apply(post,1,function(x){
@@ -178,9 +172,5 @@ colnames(mat)<-c("cqceap","cqceapcheck","tameap","tameapcheck","cqcdiff","tamdif
 mat
 
 ```
-# 問題
-
- * 雖然，驗證的結果大值符合預期。可能的話，可不可以幫我檢查PcxDesign算得的B是否正確？tam.mml所得的xsi\$xsi, Conquest 所得的cqc.prm 就是 PCX模型中的$b_k$？$\sum_{i=1}^kd_i$ 就是類別k的配分？
- * TAM的MLE與EAP皆與預期相符，為什麼Conquest的MLE部分相當符合，而EAP卻不盡然？是否有甚麼問題？
  
  

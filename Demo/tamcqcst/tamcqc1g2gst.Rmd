@@ -1,0 +1,395 @@
+```{r}
+rm(list=ls())
+tmpdir<-"g:"
+workingdir<-"L:\\github\\uirttool\\demo\\tamcqcst"
+setwd("L:\\github\\uirttool")
+source("uirttool.txt")
+
+library(TAM)
+library(RGtk2)
+library(cairoDevice)
+library(ggplot2)
+setwd(tmpdir)
+
+DynamicWindow<-function() {
+  populateOptions<-function(combobox,options){
+    for (i in 1:10) combobox$removeText(0)
+    for (i in seq_along(options)) combobox$insertText(0,options[i])
+    gtkComboBoxSetActive(combobox,0)
+  }
+
+  getFilename<-function(button){
+    filename<-""
+    dialog <- gtkFileChooserDialog("選取所要的parDf/tccDf檔案", NULL, "open",
+                                 "gtk-cancel", GtkResponseType["cancel"], 
+                                 "gtk-open", GtkResponseType["accept"])
+    dialog$setCurrentFolderUri(workingdir)
+    if (dialog$run() == GtkResponseType["accept"]) {
+      filename <- dialog$getFilename()
+    }
+    dialog$destroy()
+    if (filename!="") {
+      fname<-basename(filename)
+      if (nchar(fname)>5 && (substr(fname,1,5)=="parDf" || substr(fname,1,5)=="tccDf")) {
+        tailname<-substr(fname,6,nchar(fname))
+        parFilename<<-file.path(dirname(filename),paste0("parDf",tailname))
+        tccFilename<<-file.path(dirname(filename),paste0("tccDf",tailname))
+        #print(parFilename)
+        #print(tccFilename)
+        parDf<<-read.table(file=parFilename,header=TRUE,quote="",sep=" ")
+        tccDf<<-read.table(file=tccFilename,header=TRUE,quote="",sep=" ")
+        parDf$sizeT<-as.factor(parDf$sizeT)
+        parDf$Node<-as.factor(parDf$Node)
+        tccDf$sizeT<-as.factor(tccDf$sizeT)
+        tccDf$Node<-as.factor(tccDf$Node)
+        option.SAs<<-levels(parDf$SA)
+        option.Gs<<-levels(parDf$G)  #c("1g","2g")
+        option.sizeTs<<-levels(parDf$sizeT)    #as.character(sizeTs)
+        option.Nodes<<-levels(parDf$Node)    #as.character(nodes)
+        option.Softwares<<-c("Cqc","Tam")
+        comboboxSA$setModel(rGtkDataFrame(data.frame(SA=option.SAs)))
+        comboboxG$setModel(rGtkDataFrame(data.frame(SA=option.Gs)))
+        comboboxsizeT$setModel(rGtkDataFrame(data.frame(SA=option.sizeTs)))
+        comboboxNode$setModel(rGtkDataFrame(data.frame(SA=option.Nodes)))
+        comboboxSoftware$setModel(rGtkDataFrame(data.frame(SA=option.Softwares)))
+        comboboxSA["active"]<-0
+        comboboxG["active"]<-0
+        comboboxsizeT["active"]<-0
+        comboboxNode["active"]<-0
+        comboboxSoftware["active"]<-0
+        #populateOptions(comboboxSA,option.SAs)
+        #populateOptions(comboboxG,option.Gs)
+        #populateOptions(comboboxsizeT,option.sizeTs)
+        #populateOptions(comboboxNode,option.Nodes)
+        #populateOptions(comboboxSoftware,option.Softwares)
+        window["title"] <- paste("Dynamic :: ",parFilename)
+      }
+    }
+  }
+  plotpar<-function(){
+    #print(c(option.SAs[comboboxSA["active"]+1],option.Gs[comboboxG["active"]+1],option.sizeTs[comboboxsizeT["active"]+1],option.Nodes[comboboxNode["active"]+1],option.Softwares[comboboxSoftware["active"]+1]))
+    df1<-subset(parDf,
+      SA==option.SAs[comboboxSA["active"]+1] & G==option.Gs[comboboxG["active"]+1] & 
+      sizeT==option.sizeTs[comboboxsizeT["active"]+1] & Node==option.Nodes[comboboxNode["active"]+1] 
+    )
+    print(
+    ggplot() + 
+    coord_cartesian() +
+    scale_x_continuous() +
+    scale_y_continuous() +
+    facet_wrap(Pop~Form) +
+    layer(
+      data=df1,
+      mapping=(if (checkPar$active==FALSE){
+                 if (option.Softwares[comboboxSoftware["active"]+1]=="Cqc")
+                   aes(x=Real, y=Cqc-Real,shape=TCRA,color=TCRA)
+                 else
+                   aes(x=Real, y=Tam-Real,shape=TCRA,color=TCRA)
+               }
+               else {
+                 aes(x=Cqc, y=Tam-Cqc,shape=TCRA,color=TCRA)
+               }
+               ), 
+      stat="identity", 
+      stat_params=list(), 
+      geom="point", 
+      geom_params=list() 
+    )
+    )
+  }
+  plottcc<-function(){
+    #print(c(option.SAs[comboboxSA["active"]+1],option.Gs[comboboxG["active"]+1],option.sizeTs[comboboxsizeT["active"]+1],option.Nodes[comboboxNode["active"]+1],option.Softwares[comboboxSoftware["active"]+1]))
+    df1<-subset(tccDf,
+      SA==option.SAs[comboboxSA["active"]+1] & G==option.Gs[comboboxG["active"]+1] & 
+      sizeT==option.sizeTs[comboboxsizeT["active"]+1] & Node==option.Nodes[comboboxNode["active"]+1] 
+    )
+    print(
+    ggplot() + 
+    coord_cartesian() +
+    labs(y = "estimate - Real")+
+    scale_x_continuous() +
+    scale_y_continuous() +
+    facet_wrap(Pop~Form) +
+    layer(
+      data=df1,
+      mapping= aes(x=tccReal, y=tccEst-tccReal, group=soft,color=soft), 
+      stat="identity", 
+      stat_params=list(), 
+      geom="line", 
+      geom_params=list() 
+    )
+    )
+  }
+ 
+  window <- gtkWindow()
+  window["title"] <- ""
+  frame <- gtkFrameNew("TA design")
+  window$add(frame)
+  box1 <- gtkVBoxNew(spacing= 3) # distance between elements
+  box1$setBorderWidth(2)
+  box2 <- gtkHBoxNew(homogeneous=F,spacing= 3) # distance between elements
+  box2$setBorderWidth(2)
+  frame$add(box1)
+  box1$packStart(box2,expand=F,fill=F,padding=0)
+  
+  DoPlot<-function(but){
+    dev.set(cairo)
+    if (comboboxSA["active"]>=0 && comboboxG["active"]>=0  && comboboxsizeT["active"]>=0  && comboboxNode["active"]>=0  && comboboxSoftware["active"]>=0 ) {
+      plotpar()
+    }
+  }
+  DoPlotTcc<-function(but){
+    dev.set(cairo)
+    if (comboboxSA["active"]>=0 && comboboxG["active"]>=0  && comboboxsizeT["active"]>=0  && comboboxNode["active"]>=0  && comboboxSoftware["active"]>=0 ) {
+      plottcc()
+    }
+  }
+  comboboxTypeChanged<-function(widget,user.data=c()){
+      #if (combobox["active"]>=0) {
+      #    type<-types[combobox["active"]+1]
+      #    print(plottype(type))
+      #}       
+  }
+  
+  constructCombobox<-function(){
+    combobox <- gtkComboBox()
+    crt <- gtkCellRendererText()
+    combobox$packStart(crt)
+    combobox$addAttribute(crt, "text", 0)
+    combobox
+  }
+  buttonDf<-gtkButton("Load parDf/tccDf files")
+  box2$packStart(buttonDf,expand=F,fill=F,padding=3)
+  gSignalConnect(buttonDf, "clicked", getFilename)
+  
+  
+  box2$packStart(gtkLabelNew("St/Anc"),expand=F,fill=F,padding=3)
+  comboboxSA<-gtkComboBoxNewText()
+  comboboxSA["tooltip-text"]<-"St:Scale Transform, Anc:Anchor"
+  box2$packStart(comboboxSA,expand=F,fill=F,padding=3)
+  
+  box2$packStart(gtkLabelNew("1g/2g"),expand=F,fill=F,padding=3)
+  comboboxG<-gtkComboBoxNewText()
+  comboboxG["tooltip-text"]<-"1g:Single group, 2g:Two groups"
+  box2$packStart(comboboxG,expand=F,fill=F,padding=3)
+  
+  box2$packStart(gtkLabelNew("sizeT"),expand=F,fill=F,padding=3)
+  comboboxsizeT<-gtkComboBoxNewText()
+  comboboxsizeT["tooltip-text"]<-"sample size of form T"
+  box2$packStart(comboboxsizeT,expand=F,fill=F,padding=3)
+  
+  box2$packStart(gtkLabelNew("nodes"),expand=F,fill=F,padding=3)
+  comboboxNode<-gtkComboBoxNewText()
+  comboboxNode["tooltip-text"]<-"nodes in quadrature mathod"
+  box2$packStart(comboboxNode,expand=F,fill=F,padding=3)
+  
+  box2$packStart(gtkLabelNew("software"),expand=F,fill=F,padding=3)
+  comboboxSoftware<-gtkComboBoxNewText()
+  comboboxSoftware["tooltip-text"]<-"Cqc:Cqc, Tam:TAM"
+  box2$packStart(comboboxSoftware,expand=F,fill=F,padding=3)
+  
+  checkPar<-gtkCheckButton("Compare est. pars with each other")
+  box2$packStart(checkPar,expand=F,fill=F,padding=3)
+  
+  button<-gtkButton("plot pars")
+  box2$packStart(button,expand=F,fill=F,padding=3)
+  gSignalConnect(button, "clicked", DoPlot)
+  
+  buttonTcc<-gtkButton("plot Tcc")
+  box2$packStart(buttonTcc,expand=F,fill=F,padding=3)
+  gSignalConnect(buttonTcc, "clicked", DoPlotTcc)
+  
+  graphics <- gtkDrawingArea()
+  box1$packStart(graphics,expand=T,fill=T)
+  asCairoDevice(graphics)
+  cairo<-dev.cur()
+}   
+
+#sizeTs<-c(300,500,1000,2000)
+#sizeA<-300
+#sizeY<-500
+#T.form.means<-c(-1,0,1)
+#T.pop.means<-c(-1,0,1)
+#nodes<-c(15,49)
+sortColumns<-function(mat){
+  m<-mat
+  # 兩數非常接近，很可能造成該類別不出現，此時估計參數時會出現很大的數，例如105
+  for (i in 1:dim(mat)[2]) {
+    m[,i]<-sort(m[,i])
+  }
+  m
+}
+simulateResponse<-function(itemsT,thetasT,itemsA,thetasA) {
+  responseT<-rItems(itemsT,thetasT)
+  responseA<-rItems(itemsA,thetasA)
+  resp<-rbind(embedRespWithNA(responseT,67,1:40),
+              embedRespWithNA(responseA,67,28:67))
+  colnames(resp) <- paste0("VAR" , 1:67)
+  resp
+}
+estimateItems<-function(items,sizeY) {
+  thetas<-rnorm(sizeY,0,1.5)
+  response<-rItems(items,thetas)
+  scores<-lapply(1:40,function(i){
+    c(0,1.25,2.5)
+  })
+  AB2<-PcxDesign(scores,resp=response)
+  mod<-tam.mml(resp=response,irtmodel="1PL",B=AB2$B,est.variance=TRUE,control=list(progress=FALSE))
+  readTPcx(mod)
+}
+
+simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=12345){
+  lengthT<-40
+  lengthA<-40
+  
+  A.form.mean<-0
+  A.pop.mean<-0
+  scores<-lapply(1:40,function(x){c(0,1.25,2.5)})
+  xpoints<-seq(-5,5,len=500)
+  # create response data file in conquest format
+  tcra<-c(rep("T",27*2),rep("C",13*2),rep("R",13*2),rep("A",14*2))
+  parDf<-data.frame(SA=c(),G=c(),SizeT=c(),TCRA=c(),Form=c(),Pop=c(),Node=c(),Real=c(),Cqc=c(),Tam=c())
+  tccDf<-data.frame(SA=c(),G=c(),SizeT=c(),Form=c(),Pop=c(),Node=c(),Xpoints=c(),tccReal=c(),soft=c(),tccEst=c())
+  ################
+  #sizeY<-1000
+  #sizeA<-1000
+  #sizeTs<-2000
+  #T.form.means<- 1
+  #T.pop.means<- -1
+  #nodes<-15
+  #seed=12345
+  ##################
+  set.seed(seed)
+  write(paste("seed=",seed,"Start",Sys.time()),"log.txt",append=FALSE)
+  for (sizeT in sizeTs) {
+    for (form in T.form.means) {
+      for (pop in T.pop.means) {
+        ################
+        #sizeT<-2000
+        #form<- -1
+        #pop<- 1
+        #################
+        #simulate response data
+        thetasT<-rnorm(sizeT,pop,1.5)
+        thetasA<-rnorm(sizeA,A.pop.mean,1.5)
+        #parsT<-matrix(rbeta(lengthT*2,1.5,1.5)*4-2+form,nrow=2)
+        parsT<-matrix(runif(lengthT*2,-2,2)+form,nrow=2)
+        parsT<-sortColumns(parsT)
+        #A27<-matrix(rbeta((lengthA-13)*2,1.5,1.5)*4-2,nrow=2)
+        A27<-matrix(runif((lengthA-13)*2,-2,2)+A.form.mean,nrow=2)
+        A27<-sortColumns(A27)
+        parsA<-cbind(parsT[,28:40],A27)
+        itemsT<-list()
+        length(itemsT)<-lengthT
+        for (i in 1:lengthT) itemsT[[i]]<-Pcx(name=paste0("VAR",i),as=c(1.25,2.5),bk=parsT[,i])
+        itemsA<-list()
+        length(itemsA)<-lengthA
+        for (i in 1:lengthA) itemsA[[i]]<-Pcx(name=paste0("VAR",i+27),as=c(1.25,2.5),bk=parsA[,i])
+        # 以estItems自由估計itemsA
+        estItems<-estimateItems(itemsA,sizeY)
+        # 平移estItems
+        estItems<-stItems(estItems,estItems[28:40],itemsA[28:40])
+        Anc<-estItems[28:40]
+        simResp<-simulateResponse(itemsT,thetasT,itemsA,thetasA)
+        
+        for(node in nodes) {
+          sco<-lapply(1:67,function(i){c(0,1.25,2.5)})
+          AB2<-PcxDesign(sco,resp=simResp)
+          mod1<-tam.mml(simResp,irtmodel="PCM2",B=AB2$B,control=list( nodes = seq(-6,6,len=node)))
+          tamst1g<-readTPcx(mod1)
+          write(paste("TAM1g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
+          tamst1g<-stItems(tamst1g,tamst1g[28:40],estItems[1:13])
+          AB2<-PcxDesign(sco,resp=simResp)
+          mod2<-tam.mml(simResp,irtmodel="PCM2",B=AB2$B,group=c(rep(1,sizeT),rep(2,sizeA)),control=list( nodes = seq(-6,6,len=node)))
+          tamst2g<-readTPcx(mod2)
+          write(paste("TAM2g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
+          tamst2g<-stItems(tamst2g,tamst2g[28:40],estItems[1:13])
+          cqcresp<-cbind(simResp,c(rep(0,sizeT),rep(1,sizeA)))
+          writeLines(tamresp2cqcdat(cqcresp),"cqcta.dat")
+          cmds<-createCCmds(datafile="cqcta.dat",
+              responses="1-67",constraints="cases",
+              exportprmfile="cqc1g.prm",exportdesignmatrixfile="cqc1g.des",
+              Model="item+item*step",showmlefile="cqc1g.mle",
+              exportregfile="cqc1g.beta",exportcovfile="cqc1g.cov",
+              Scores=c("score (0 1 2) (0 1.25 2.5) !items(1-67);"),
+              quit=TRUE)
+          writeLines(cmds,"cqc1g.cqc")
+          system("\"L:\\Acer Conquest3\\conquest3console.exe\" cqc1g.cqc;")
+          write(paste("Cqc1g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
+          cmds<-createCCmds(datafile="cqcta.dat",
+              responses="1-67",constraints="cases",
+              GroupNames=c("A"),GroupPositions=c(68),
+              exportprmfile="cqc2g.prm",exportdesignmatrixfile="cqc2g.des",
+              Model="item+item*step",showmlefile="cqc2g.mle",
+              exportregfile="cqc2g.beta",exportcovfile="cqc2g.cov",
+              Scores=c("score (0 1 2) (0 1.25 2.5) !items(1-67);"),
+              quit=TRUE)
+          writeLines(cmds,"cqc2g.cqc")
+          system("\"L:\\Acer Conquest3\\conquest3console.exe\" cqc2g.cqc;")
+          write(paste("Cqc2g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
+          cqcst1g<-readCPcx(listScores=
+             lapply(1:67,function(i){c(0,1.25,2.5)}),
+             prmfile="cqc1g.prm",designfile="cqc1g.des")
+          cqcst1g<-stItems(cqcst1g,cqcst1g[28:40],estItems[1:13])
+          cqcst2g<-readCPcx(listScores=
+             lapply(1:67,function(i){c(0,1.25,2.5)}),
+             prmfile="cqc2g.prm",designfile="cqc2g.des")
+          cqcst2g<-stItems(cqcst2g,cqcst2g[28:40],estItems[1:13])
+          parDf<-rbind(parDf,data.frame(
+            SA=c(rep("St",67*2),rep("St",67*2)),
+            G=c(rep("1g",67*2),rep("2g",67*2)),
+            sizeT=rep(rep(as.character(sizeT),67*2),2),
+            TCRA=rep(tcra,2),
+            Form=rep(rep(paste0("form:",form),67*2),2),
+            Pop=rep(rep(paste0("pop:",pop),67*2),2),
+            Node=rep(rep(as.character(node),67*2),2),
+            Real=rep(c(cbind(parsT,A27)),2),
+            Cqc=c(getBks(cqcst1g),getBks(cqcst2g)),
+            Tam=c(getBks(tamst1g),getBks(tamst2g))
+            ))
+          len<-length(xpoints)
+          tccDf<-rbind(tccDf,data.frame(
+            SA=c(rep("St",len),rep("St",len)),
+            G=c(rep("1g",len),rep("2g",len)),
+            sizeT=rep(rep(as.character(sizeT),len),2),
+            Form=rep(rep(paste0("form:",form),len),2),
+            Pop=rep(rep(paste0("pop:",pop),len),2),
+            Node=rep(rep(as.character(node),len),2),
+            Xpoints=rep(xpoints,2),
+            tccReal=rep(tcc(itemsT,scores=scores,thetas=xpoints),2),
+            soft=rep("Cqc",2*len),
+            tccEst=c(tcc(cqcst1g[1:40],scores=scores,thetas=xpoints),tcc(cqcst2g[1:40],scores=scores,thetas=xpoints))
+            ))
+          tccDf<-rbind(tccDf,data.frame(
+            SA=c(rep("St",len),rep("St",len)),
+            G=c(rep("1g",len),rep("2g",len)),
+            sizeT=rep(rep(as.character(sizeT),len),2),
+            Form=rep(rep(paste0("form:",form),len),2),
+            Pop=rep(rep(paste0("pop:",pop),len),2),
+            Node=rep(rep(as.character(node),len),2),
+            Xpoints=rep(xpoints,2),
+            tccReal=rep(tcc(itemsT,scores=scores,thetas=xpoints),2),
+            soft=rep("Tam",2*len),
+            tccEst=c(tcc(tamst1g[1:40],scores=scores,thetas=xpoints),tcc(tamst2g[1:40],scores=scores,thetas=xpoints))
+            ))
+        }
+      }
+    }
+  }
+  dt<-gsub("[ :]","-",as.character(Sys.time()))
+  write.table(parDf,file=paste0(workingdir,"\\","parDf",sizeY,"-",sizeA,"-",dt,".txt"),col.names=TRUE,row.names=FALSE,quote=FALSE)
+  write.table(tccDf,file=paste0(workingdir,"\\","tccDf",sizeY,"-",sizeA,"-",dt,".txt"),col.names=TRUE,row.names=FALSE,quote=FALSE)
+  write(paste("End",Sys.time()),"log.txt",append=TRUE)
+  logtext<-readLines("log.txt")
+  writeLines(logtext,file.path(workingdir,paste0("log-",dt,".txt")))
+}
+#simulation(1000,1000,c(1000),c(-1),c(1),c(15))
+simulation(1000,1000,c(1000),c(-1),c(1),c(15),seed=1)
+#simulation(2000,2000,c(2000),c(-1),c(1),c(15))
+
+#simulation(2000,1000,c(1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15),seed=12345)
+#simulation(2000,300,c(300,500,1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15,49),seed=54321)
+#simulation(2000,1000,c(300,500,1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15,49),seed=12345)
+# RStudio IS NOT compatible with cairodevice, SO DynamicWindow should run in R pure console
+#DynamicWindow()
+```

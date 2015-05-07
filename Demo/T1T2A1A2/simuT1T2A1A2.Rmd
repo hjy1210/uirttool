@@ -1,0 +1,221 @@
+```{r}
+rm(list=ls())
+setwd("L:/github/uirttool")
+source("uirttool.txt")
+library(TAM)
+set.seed(150501)
+populations<-read.table("demo/T1T2A1A2/muvarT1T2A1A2.dat")
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+lines<-readLines("demo/T1T2A1A2/8190.prm")
+lines<-strsplit(trim(lines),"\\s+")
+index<-sapply(lines,function(x){as.numeric(x[1])})
+xsi<-sapply(lines,function(x){as.numeric(x[2])})
+xsi<-xsi+rnorm(length(xsi),0,0.05)
+setwd("g:/")
+write.table(data.frame(index,xsi),"8190.prm",col.names=FALSE,row.names=FALSE)
+
+setwd("L:/github/uirttool")
+pars<-read.table("demo/T1T2A1A2/T1T2A1A2.par")[[1]]
+items<-lapply(1:90,function(i){
+  if (i<=4) Pcx(name=paste0("V",i),as=1,bk=pars[i])
+  else if (i<=10) Pcx(name=paste0("V",i),as=c(0.5,1),bk=pars[(5+(i-5)*2):(6+(i-5)*2)])
+  else if (i<=44) Pcx(name=paste0("V",i),as=1,bk=pars[17+(i-11)])
+  else if (i<=50) Pcx(name=paste0("V",i),as=c(0.5,1),bk=pars[(51+(i-45)*2):(52+(i-45)*2)])
+  else Pcx(name=paste0("V",i),as=1,bk=pars[63+(i-51)])
+  })
+t1theta<-rnorm(60000,populations["T1","mu"],sqrt(populations["T1","var"]))
+t2theta<-rnorm(60000,populations["T2","mu"],sqrt(populations["T2","var"]))
+a1theta<-rnorm(400,populations["A1","mu"],sqrt(populations["A1","var"]))
+a2theta<-rnorm(400,populations["A2","mu"],sqrt(populations["A2","var"]))
+
+t1index<-1:40
+t2index<-41:80
+a1index<-c(1,2,5,6,8,12,19,20,22,24,29:32,39:41,44,47,49,50,53,55,57,58,62,65,66,77,78,81:90)
+a2index<-c(2,4,7,9:11,14,15,17,21,25,26,35,36,42,43,45,47,48,56,59,60,61,63,67,68,71,72,79:90)
+t1resp<-rItems(items[t1index],t1theta)
+t2resp<-rItems(items[t2index],t2theta)
+a1resp<-rItems(items[a1index],a1theta)
+a2resp<-rItems(items[a2index],a2theta)
+resp<-rbind(embedRespWithNA(t1resp,90,t1index),embedRespWithNA(t2resp,90,t2index),
+      embedRespWithNA(a1resp,90,a1index),embedRespWithNA(a2resp,90,a2index))
+colnames(resp)=paste0("V",1:90)
+a1int1<-a1index[a1index<=40]
+a1int2<-a1index[a1index>40 & a1index<=80]-40
+t1ina1<-(1:40)[a1index<=40]
+t2ina1<-(1:40)[a1index<=80 & a1index>40]
+a2int1<-a2index[a2index<=40]
+a2int2<-a2index[a2index>40 & a2index<=80]-40
+t1ina2<-(1:40)[a2index<=40]
+t2ina2<-(1:40)[a2index<=80 & a2index>40]
+
+setwd("g:/")
+writeLines(tamresp2cqcdat(resp),"cqc.dat")
+writeLines(tamresp2cqcdat(t1resp),"t1.dat")
+writeLines(tamresp2cqcdat(t2resp),"t2.dat")
+writeLines(tamresp2cqcdat(a1resp),"a1.dat")
+writeLines(tamresp2cqcdat(a2resp),"a2.dat")
+
+cmds<-createCCmds(datafile="cqc.dat",responses="1-90",constraints="none",exportprmfile="cqc.prm",
+                  exportdesignmatrixfile="cqc.des",Model="item+item*step",showmlefile="cqc.mle",
+                  exportregfile="cqc.beta",exportcovfile="cqc.cov",importprmfile="8190.prm",
+                  Scores=c("score (0 1) (0 1) !items(1-4);",
+                           "score (0 1) (0 1) !items(11-44);",
+                           "score (0 1) (0 1) !items(51-90);",
+                           "score (0 1 2) (0 0.5 1) ! items(5-10);",
+                           "score (0 1 2) (0 0.5 1) ! items(45-50);"
+                           ),quit=TRUE)
+writeLines(cmds,"commands.cqc")
+cmds<-createCCmds(datafile="t1.dat",responses="1-40",constraints="cases",exportprmfile="t1.prm",
+                  exportdesignmatrixfile="t1.des",Model="item+item*step",showmlefile="t1.mle",
+                  exportregfile="t1.beta",exportcovfile="t1.cov",
+                  Scores=c("score (0 1) (0 1) !items(1-4);",
+                           "score (0 1) (0 1) !items(11-40);",
+                           "score (0 1 2) (0 0.5 1) ! items(5-10);"
+                  ),quit=TRUE)
+writeLines(cmds,"t1.cqc")
+cmds<-createCCmds(datafile="t2.dat",responses="1-40",constraints="cases",exportprmfile="t2.prm",
+                  exportdesignmatrixfile="t2.des",Model="item+item*step",showmlefile="t2.mle",
+                  exportregfile="t2.beta",exportcovfile="t2.cov",
+                  Scores=c("score (0 1) (0 1) !items(1-4);",
+                           "score (0 1) (0 1) !items(11-40);",
+                           "score (0 1 2) (0 0.5 1) ! items(5-10);"
+                  ),quit=TRUE)
+writeLines(cmds,"t2.cqc")
+cmds<-createCCmds(datafile="a1.dat",responses="1-40",constraints="cases",exportprmfile="a1.prm",
+                  exportdesignmatrixfile="a1.des",Model="item+item*step",showmlefile="a1.mle",
+                  exportregfile="a1.beta",exportcovfile="a1.cov",
+                  Scores=c("score (0 1) (0 1) !items(1-2);",
+                           "score (0 1) (0 1) !items(6-18);",
+                           "score (0 1) (0 1) !items(22-40);",
+                           "score (0 1 2) (0 0.5 1) ! items(3-5);",
+                           "score (0 1 2) (0 0.5 1) ! items(19-21);"
+                  ),quit=TRUE)
+writeLines(cmds,"a1.cqc")
+cmds<-createCCmds(datafile="a2.dat",responses="1-40",constraints="cases",exportprmfile="a2.prm",
+                  exportdesignmatrixfile="a2.des",Model="item+item*step",showmlefile="a2.mle",
+                  exportregfile="a2.beta",exportcovfile="a2.cov",
+                  Scores=c("score (0 1) (0 1) !items(1-2);",
+                           "score (0 1) (0 1) !items(6-16);",
+                           "score (0 1) (0 1) !items(20-40);",
+                           "score (0 1 2) (0 0.5 1) ! items(3-5);",
+                           "score (0 1 2) (0 0.5 1) ! items(17-19);"
+                  ),quit=TRUE)
+writeLines(cmds,"a2.cqc")
+system("\"L:\\Acer Conquest3\\conquest3console.exe\" commands.cqc;")
+system("\"L:\\Acer Conquest3\\conquest3console.exe\" t1.cqc;")
+system("\"L:\\Acer Conquest3\\conquest3console.exe\" t2.cqc;")
+system("\"L:\\Acer Conquest3\\conquest3console.exe\" a1.cqc;")
+system("\"L:\\Acer Conquest3\\conquest3console.exe\" a2.cqc;")
+
+
+scores<-lapply(1:90,function(i){
+  if (i>=5 && i<=10 || i>=45 && i<=50) c(0,0.5,1)
+  else c(0,1)
+  })
+AB2<-PcxDesign(scores,resp=resp)
+xsifixed<-cbind(81:90,c(-0.898,-0.002, 1.735, -0.082, 0.550, 1.342, 1.884, 1.539, 0.112, 0.617))
+mod<-tam.mml(resp=resp,irtmodel="PCM2",B=AB2$B,xsi.fixed=xsifixed,beta.fixed=FALSE,est.variance=TRUE)
+AB2<-PcxDesign(scores[1:40],resp=t1resp)
+modt1<-tam.mml(resp=t1resp,irtmodel="PCM2",B=AB2$B,est.variance=TRUE)
+AB2<-PcxDesign(scores[41:80],resp=t2resp)
+modt2<-tam.mml(resp=t2resp,irtmodel="PCM2",B=AB2$B,est.variance=TRUE)
+AB2<-PcxDesign(scores[a1index],resp=a1resp)
+moda1<-tam.mml(resp=a1resp,irtmodel="PCM2",B=AB2$B,est.variance=TRUE)
+AB2<-PcxDesign(scores[a2index],resp=a2resp)
+moda2<-tam.mml(resp=a2resp,irtmodel="PCM2",B=AB2$B,est.variance=TRUE)
+tamitems<-readTPcx(mod)
+tamt1items<-readTPcx(modt1)
+tamt2items<-readTPcx(modt2)
+tama1items<-readTPcx(moda1)
+tama2items<-readTPcx(moda2)
+cqcitems<-readCPcx(scores,"cqc.prm","cqc.des")
+cqct1items<-readCPcx(scores[1:40],"t1.prm","t1.des")
+cqct2items<-readCPcx(scores[41:80],"t2.prm","t2.des")
+cqca1items<-readCPcx(scores[a1index],"a1.prm","a1.des")
+cqca2items<-readCPcx(scores[a2index],"a2.prm","a2.des")
+plot(getBks(cqcitems),getBks(tamitems))
+plot(getBks(cqcitems),getBks(tamitems)-getBks(cqcitems))
+plot(getBks(cqct1items),getBks(tamt1items)-getBks(cqct1items))
+plot(getBks(cqct2items),getBks(tamt2items)-getBks(cqct2items))
+plot(getBks(cqca1items),getBks(tama1items)-getBks(cqca1items))
+plot(getBks(cqca2items),getBks(tama2items)-getBks(cqca2items))
+plot(pars,getBks(tamitems)-pars)
+abline(a=0,b=0)
+plot(pars,getBks(cqcitems)-pars)
+abline(a=0,b=0)
+anchoritems<-lapply(1:10,function(i){
+  Pcx(name=paste0("V",i),as=1,bk=xsi[i])
+})
+tama1items<-stItems(tama1items,tama1items[31:40],anchoritems)
+tama2items<-stItems(tama2items,tama2items[31:40],anchoritems)
+tamt1a1items<-stItems(tamt1items,tamt1items[a1int1],tama1items[t1ina1])
+tamt1a2items<-stItems(tamt1items,tamt1items[a2int1],tama2items[t1ina2])
+tamt2a1items<-stItems(tamt2items,tamt2items[a1int2],tama1items[t2ina1])
+tamt2a2items<-stItems(tamt2items,tamt2items[a2int2],tama2items[t2ina2])
+plot(pars[1:46],getBks(tamt1a1items)-pars[1:46])
+abline(a=0,b=0)
+plot(pars[1:46],getBks(tamt1a2items)-pars[1:46])
+abline(a=0,b=0)
+plot(pars[47:92],getBks(tamt2a1items)-pars[47:92])
+abline(a=0,b=0)
+plot(pars[47:92],getBks(tamt2a2items)-pars[47:92])
+abline(a=0,b=0)
+
+cqca1items<-stItems(cqca1items,cqca1items[31:40],anchoritems)
+cqca2items<-stItems(cqca2items,cqca2items[31:40],anchoritems)
+cqct1a1items<-stItems(cqct1items,cqct1items[a1int1],cqca1items[t1ina1])
+cqct1a2items<-stItems(cqct1items,cqct1items[a2int1],cqca2items[t1ina2])
+cqct2a1items<-stItems(cqct2items,cqct2items[a1int2],cqca1items[t2ina1])
+cqct2a2items<-stItems(cqct2items,cqct2items[a2int2],cqca2items[t2ina2])
+plot(pars[1:46],getBks(cqct1a1items)-pars[1:46])
+abline(a=0,b=0)
+plot(pars[1:46],getBks(cqct1a2items)-pars[1:46])
+abline(a=0,b=0)
+plot(pars[47:92],getBks(cqct2a1items)-pars[47:92])
+abline(a=0,b=0)
+plot(pars[47:92],getBks(cqct2a2items)-pars[47:92])
+abline(a=0,b=0)
+
+thetas<-seq(-6,6,len=1000)
+tamtcct1a1<-tcc(tamt1a1items,thetas=thetas)
+tamtcct1a2<-tcc(tamt1a2items,thetas=thetas)
+tamtcct2a1<-tcc(tamt2a1items,thetas=thetas)
+tamtcct2a2<-tcc(tamt2a2items,thetas=thetas)
+cqctcct1a1<-tcc(cqct1a1items,thetas=thetas)
+cqctcct1a2<-tcc(cqct1a2items,thetas=thetas)
+cqctcct2a1<-tcc(cqct2a1items,thetas=thetas)
+cqctcct2a2<-tcc(cqct2a2items,thetas=thetas)
+tamtcct1<-tcc(tamitems[1:40],thetas=thetas)
+tamtcct2<-tcc(tamitems[41:80],thetas=thetas)
+cqctcct1<-tcc(cqcitems[1:40],thetas=thetas)
+cqctcct2<-tcc(cqcitems[41:80],thetas=thetas)
+tccitems0140<-tcc(items[1:40],thetas=thetas)
+tccitems4180<-tcc(items[41:80],thetas=thetas)
+
+plot(tccitems0140,tamtcct1-tccitems0140,type="l")
+abline(a=0,b=0)
+plot(tccitems0140,cqctcct1-tccitems0140,type="l")
+abline(a=0,b=0)
+plot(tccitems0140,tamtcct1a1-tccitems0140,type="l")
+abline(a=0,b=0)
+plot(tccitems0140,cqctcct1a1-tccitems0140,type="l")
+abline(a=0,b=0)
+plot(tccitems0140,tamtcct1a2-tccitems0140,type="l")
+abline(a=0,b=0)
+plot(tccitems0140,cqctcct1a2-tccitems0140,type="l")
+abline(a=0,b=0)
+
+plot(tccitems4180,tamtcct2-tccitems4180,type="l")
+abline(a=0,b=0)
+plot(tccitems4180,cqctcct2-tccitems4180,type="l")
+abline(a=0,b=0)
+plot(tccitems4180,tamtcct2a1-tccitems4180,type="l")
+abline(a=0,b=0)
+plot(tccitems4180,cqctcct2a1-tccitems4180,type="l")
+abline(a=0,b=0)
+plot(tccitems4180,tamtcct2a2-tccitems4180,type="l")
+abline(a=0,b=0)
+plot(tccitems4180,cqctcct2a2-tccitems4180,type="l")
+abline(a=0,b=0)
+
+```

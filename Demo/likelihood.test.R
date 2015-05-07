@@ -1,6 +1,6 @@
 rm(list=ls())
-source("PL.R")
-source("likelihood.R")
+setwd("L:/github/uirttool")
+source("uirttool.txt")
 require(RGtk2)
 require(cairoDevice)
 # In illmle.mod, V1-V10 is copyed from Educational Measurement Vol.4,P137.
