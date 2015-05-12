@@ -307,7 +307,7 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
           cqcresp<-cbind(simResp,c(rep(0,sizeT),rep(1,sizeA)))
           writeLines(tamresp2cqcdat(cqcresp),"cqcta.dat")
           cmds<-createCCmds(datafile="cqcta.dat",
-              responses="1-67",constraints="cases",
+              responses="1-67",constraints="cases",nodes=node,
               exportprmfile="cqc1g.prm",exportdesignmatrixfile="cqc1g.des",
               Model="item+item*step",showmlefile="cqc1g.mle",
               exportregfile="cqc1g.beta",exportcovfile="cqc1g.cov",
@@ -317,7 +317,7 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
           system("\"L:\\Acer Conquest3\\conquest3console.exe\" cqc1g.cqc;")
           write(paste("Cqc1g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
           cmds<-createCCmds(datafile="cqcta.dat",
-              responses="1-67",constraints="cases",
+              responses="1-67",constraints="cases",nodes=node,
               GroupNames=c("A"),GroupPositions=c(68),
               exportprmfile="cqc2g.prm",exportdesignmatrixfile="cqc2g.des",
               Model="item+item*step",showmlefile="cqc2g.mle",
@@ -384,7 +384,7 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
   writeLines(logtext,file.path(workingdir,paste0("log-",dt,".txt")))
 }
 #simulation(1000,1000,c(1000),c(-1),c(1),c(15))
-simulation(1000,1000,c(1000),c(-1),c(1),c(15),seed=1)
+simulation(1000,1000,c(1000),c(-1),c(1),c(15,49),seed=1)
 #simulation(2000,2000,c(2000),c(-1),c(1),c(15))
 
 #simulation(2000,1000,c(1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15),seed=12345)

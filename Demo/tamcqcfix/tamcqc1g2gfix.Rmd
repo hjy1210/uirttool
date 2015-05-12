@@ -297,31 +297,32 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
           AB2<-PcxDesign(sco,resp=simResp)
           #### designmatrix of PCM2 in TAM IS NOT the same as of item+item*step in Conquest
           #### need construct xsifixed for TAM and cqcfixed for Conquest
-          xsifixed2<-cbind(c(55:67,122:134),c(1.25*0.5*(bks[seq(55,80,by=2)]+bks[seq(56,80,by=2)]),1.25*0.5*(bks[seq(55,80,by=2)]-bks[seq(56,80,by=2)])))
-          p<-lapply(28:40,function(i){pcxbk2xsi(estItems[[i]]$ak,estItems[[i]]$bk,type="PCM2")})
-          ps<-c()
-          for (i in 1:length(p)) ps<-c(ps,p[[i]])
-          xsifixed<-cbind(c(55:67,122:134),ps[c(seq(1,26,by=2),seq(2,26,by=2))])
+          #xsifixed2<-cbind(c(55:67,122:134),c(1.25*0.5*(bks[seq(55,80,by=2)]+bks[seq(56,80,by=2)]),1.25*0.5*(bks[seq(55,80,by=2)]-bks[seq(56,80,by=2)])))
+          #p<-lapply(28:40,function(i){pcxbk2xsi(estItems[[i]]$ak,estItems[[i]]$bk,type="PCM2")})
+          #ps<-c()
+          #for (i in 1:length(p)) ps<-c(ps,p[[i]])
+          #xsifixed<-cbind(c(55:67,122:134),ps[c(seq(1,26,by=2),seq(2,26,by=2))])
           
-          cqcfixed<-cbind(c(55:67,122:134),c(0.5*(bks[seq(55,80,by=2)]+bks[seq(56,80,by=2)]),1.25*0.5*(bks[seq(55,80,by=2)]-bks[seq(56,80,by=2)])))
+          #cqcfixed<-cbind(c(55:67,122:134),c(0.5*(bks[seq(55,80,by=2)]+bks[seq(56,80,by=2)]),1.25*0.5*(bks[seq(55,80,by=2)]-bks[seq(56,80,by=2)])))
           #print(max(abs(xsifixed[,2]-xsifixed2[,2])))
           #a<-scan()
-          write.table(cqcfixed,"cqcfix.prm",row.names = FALSE,col.names = FALSE)
-          mod1<-tam.mml(simResp,irtmodel="PCM2",B=AB2$B,xsi.fixed=xsifixed,beta.fixed=FALSE,control=list( nodes = seq(-6,6,len=node)))
+		      fixedpcm2<-getPcxXsifixed(sco,55:67,estItems[28:40],"PCM2")
+          write.table(fixedpcm2$cqcfixed,"cqcfix.prm",row.names = FALSE,col.names = FALSE)
+          mod1<-tam.mml(simResp,irtmodel="PCM2",B=AB2$B,xsi.fixed=fixedpcm2$tamfixed,beta.fixed=FALSE,control=list( nodes = seq(-6,6,len=node)))
           tamfix1g<-readTPcx(mod1)
-          write.table(bks,"estItems.xsi")
-          write.table(getBks(tamfix1g),"tamfix1g.xsi")
+          #write.table(bks,"estItems.xsi")
+          #write.table(getBks(tamfix1g),"tamfix1g.xsi")
           write(paste("TAM1g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
           AB2<-PcxDesign(sco,resp=simResp)
-          mod2<-tam.mml(simResp,irtmodel="PCM2",B=AB2$B,xsi.fixed=xsifixed,beta.fixed=FALSE,group=c(rep(1,sizeT),rep(2,sizeA)),control=list( nodes = seq(-6,6,len=node)))
+          mod2<-tam.mml(simResp,irtmodel="PCM2",B=AB2$B,xsi.fixed=fixedpcm2$tamfixed,beta.fixed=FALSE,group=c(rep(1,sizeT),rep(2,sizeA)),control=list( nodes = seq(-6,6,len=node)))
           tamfix2g<-readTPcx(mod2)
-          write.table(getBks(tamfix2g),"tamfix2g.xsi")
+          #write.table(getBks(tamfix2g),"tamfix2g.xsi")
           write(paste("TAM2g finish",sizeT,form,pop,node,Sys.time()),"log.txt",append=TRUE)
           cqcresp<-cbind(simResp,c(rep(0,sizeT),rep(1,sizeA)))
           writeLines(tamresp2cqcdat(cqcresp),"cqcta.dat")
           cmds<-createCCmds(datafile="cqcta.dat",
               responses="1-67",constraints="none",
-              importprmfile="cqcfix.prm",
+              importprmfile="cqcfix.prm",nodes=node,
               exportprmfile="cqc1g.prm",exportdesignmatrixfile="cqc1g.des",
               Model="item+item*step",showmlefile="cqc1g.mle",
               exportregfile="cqc1g.beta",exportcovfile="cqc1g.cov",
@@ -333,7 +334,7 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
           cmds<-createCCmds(datafile="cqcta.dat",
               responses="1-67",constraints="none",
               GroupNames=c("A"),GroupPositions=c(68),
-              importprmfile="cqcfix.prm",
+              importprmfile="cqcfix.prm",nodes=node,
               exportprmfile="cqc2g.prm",exportdesignmatrixfile="cqc2g.des",
               Model="item+item*step",showmlefile="cqc2g.mle",
               exportregfile="cqc2g.beta",exportcovfile="cqc2g.cov",
@@ -345,11 +346,11 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
           cqcfix1g<-readCPcx(listScores=
              lapply(1:67,function(i){c(0,1.25,2.5)}),
              prmfile="cqc1g.prm",designfile="cqc1g.des")
-          write.table(getBks(cqcfix1g),"cqcfix1g.xsi")
+          #write.table(getBks(cqcfix1g),"cqcfix1g.xsi")
           cqcfix2g<-readCPcx(listScores=
              lapply(1:67,function(i){c(0,1.25,2.5)}),
              prmfile="cqc2g.prm",designfile="cqc2g.des")
-          write.table(getBks(cqcfix2g),"cqcfix2g.xsi")
+          #write.table(getBks(cqcfix2g),"cqcfix2g.xsi")
           parDf<-rbind(parDf,data.frame(
             SA=c(rep("Fix",67*2),rep("Fix",67*2)),
             G=c(rep("1g",67*2),rep("2g",67*2)),
@@ -399,11 +400,11 @@ simulation<-function(sizeY,sizeA,sizeTs,T.form.means,T.pop.means,nodes,seed=1234
   writeLines(logtext,file.path(workingdir,paste0("log-",dt,".txt")))
 }
 #simulation(1000,1000,c(1000),c(-1),c(1),c(15))
-#simulation(1000,1000,c(1000),c(-1),c(1),c(15),seed=1)
+simulation(1000,1000,c(1000),c(-1),c(1),c(15,49),seed=1)
 #simulation(2000,2000,c(2000),c(-1),c(1),c(15))
 
 #simulation(2000,1000,c(1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15),seed=12345)
-simulation(2000,300,c(300,500,1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15,49),seed=54321)
+#simulation(2000,300,c(300,500,1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15,49),seed=54321)
 #simulation(2000,1000,c(300,500,1000,2000,3000),c(-1,0,1),c(-1,0,1),c(15,49),seed=12345)
 # RStudio IS NOT compatible with cairodevice
 #DynamicWindow()
