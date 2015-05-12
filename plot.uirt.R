@@ -1,4 +1,5 @@
-plot.uirt<-function(item,thetas,type="crf") {
+plot.uirt<-function(x,thetas,type="crf",...) {
+  item<-x
   ncat<-item$ncat
   revcump<-function(){
     p<-item$pdf(thetas)
