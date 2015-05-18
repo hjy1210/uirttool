@@ -8,19 +8,19 @@ Nrm <-function(name,ak,ck,a=NULL,as=NULL){
   } else if (a==1){
     if (is.null(as)){
       itemtype<-"pcm"
-      ak<- 0:m
+      as<-1:m
     } else {
       itemtype<-"pcx"
-      ak<-c(0,as)
     }
+    ak<-c(0,as)
   } else {
     if (is.null(as)){
       itemtype<-"gpc"
-      ak<-a*(0:m)
+      as<- 1:m
     } else {
       itemtype<-"gpx"
-      ak<-c(0,a*as)
     }
+    ak<-c(0,a*as)
   }
   dk<-ak[-1]-ak[-length(ak)]
   bk<- -ck[1]/dk[1]

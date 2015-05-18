@@ -1,7 +1,7 @@
 tcc<-function(items,thetas,scores=NULL){
   if (is.null(scores)){
     scores<-lapply(items,function(item){
-      c(0,item$ak)
+      c(0,item$as) #c(0,item$ak)
       })
   }
   if (length(items)!=length(scores)) stop("items and scores should be of equal length")
