@@ -1,4 +1,4 @@
-PcxDesign<-function(listScores,resp){
+PcxDesign<-function(listScores){
   n<-length(listScores)
   Ks<-sapply(listScores,length)-1
   m<-max(Ks)+1
@@ -14,9 +14,10 @@ PcxDesign<-function(listScores,resp){
     list(starts=starts,ends=ends)
   }
   getB<-function(){
-    B<-designMatrices(modeltype="PCM",resp=resp)$B
-    if (dim(B)[1]!=n || dim(B)[2]!=m || dim(B)[3]!=1) stop("dim of B error")
-    B[,,]<-0
+    #B<-designMatrices(modeltype="PCM",resp=resp)$B
+    #if (dim(B)[1]!=n || dim(B)[2]!=m || dim(B)[3]!=1) stop("dim of B error")
+    #B[,,]<-0
+    B<-array(0,dim=c(n,m,1))
     for (i in 1:n){
       B[i,1:(Ks[i]+1),1]<-listScores[[i]]
     }
